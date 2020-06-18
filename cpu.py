@@ -5,21 +5,30 @@
 import sys
 
 # setup consts for op codes
-LDI = 0b10000010 # LDI R0,8 130
-PRN = 0b01000111 # PRN R0, 71
-HLT = 0b00000001 # HLT
-MUL = 0b10100010 # Multiply
-ADD = 0b10100000 # Addition
-PUSH = 0b01000101
-POP = 0b01000110
-RET = 0b00010001
+LDI = 0b10000010  # LDI R0,8 130 set value of a register to an integer
+PRN = 0b01000111  # register, print numeric value PRN R0, 71
+HLT = 0b00000001  # HLT
+MUL = 0b10100010  # Multiply
+ADD = 0b10100000  # Addition
+PUSH = 0b01000101  # push register
+POP = 0b01000110  # pop value at rhe top of the stack into given register
+RET = 0b00010001  # return from subroutine
 CALL = 0b01010000
 
-SP = 7  # stack pointer set to be used a R7 per spec
+XOR = 0b10101011  # bitwise-xor
+AND = 0b10101000
+CMP = 0b10100111
+JMP = 0b01010100  # jump to the address stored in the given register
+# If E flag is clear (false, 0), jump to the address stored in the given register.
+JNE = 0b01010110
+# if equal flag is set (true), jump to the address stored in the given register.
+JEQ = 0b01010101
+PRA = 0b01001000  # register print alpha character value stored in register
+
+# SP = 7  # stack pointer set to be used a R7 per spec
+
 
 class CPU:
-    """Main CPU class."""
-
     def __init__(self):
         """Construct a new CPU."""
         # create 256 bites of memory
@@ -28,6 +37,29 @@ class CPU:
         self.reg = [0] * 8
         # program counter PC
         self.pc = 0
+        # set Stack Pointer 'PC' index in register, it will always point to position  in Register
+        self.sp = 7
+        # assign SP to the value of 244 in RAM
+        self.registers[7] = 0xF4
+        # dictionary to hold Flags
+        self.flags = dict()
+        # Build branch table:
+        self.bt = {}
+        self.bt[JMP] = self.jmp
+        self.bt[JNE] = self.jne
+        self.bt[ADD] = self.add
+        self.bt[MUL] = self.mul
+        self.bt[PUSH] = self.push
+        self.bt[POP] = self.pop
+        self.bt[CALL] = self.call
+        self.bt[JEQ] = self.jeq
+        self.bt[CMP] = self.cmp_func
+        self.bt[AND] = self.and_func
+        self.bt[XOR] = self.xor_func
+        self.bt[LDI] = self.ldi
+        self.bt[PRN] = self.prn
+        self.bt[RET] = self.ret
+        self.bt[PRA] = self.pra
 
     # Inside the CPU, there are two internal registers used for memory operations: 
     # the Memory Address Register (MAR) and the Memory Data Register (MDR).
